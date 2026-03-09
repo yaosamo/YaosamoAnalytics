@@ -8,16 +8,21 @@ import { fileURLToPath } from "node:url";
 const execFileAsync = promisify(execFile);
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const publicDir = join(__dirname, "public");
+const vercelBin = join(__dirname, "node_modules", ".bin", "vercel");
 const PORT = Number(process.env.PORT || 4318);
 const TEAM_ID = "team_PdY9NxADrySafNPPBKV1CyhW";
 const PROJECTS = [
   "gong",
-  "yaosamo-ip",
-  "visuals",
-  "when-there",
+  "selfie-app",
+  "personal-website",
   "creativeclub",
-  "personal-website"
+  "visuals",
+  "games",
+  "when-there",
+  "qrcodemachine",
+  "yaosamo-ip"
 ];
+const WEB_ANALYTICS_TOKEN = process.env.VERCEL_BEARER_TOKEN || "";
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -79,29 +84,65 @@ function normalizeRecords(records) {
   }));
 }
 
+async function fetchMonthlyUsers(project, start, end) {
+  if (!WEB_ANALYTICS_TOKEN) {
+    return null;
+  }
+
+  const url = new URL("https://vercel.com/api/web-analytics/stats");
+  url.searchParams.set("environment", "production");
+  url.searchParams.set("filter", "{}");
+  url.searchParams.set("from", start.toISOString());
+  url.searchParams.set("limit", "250");
+  url.searchParams.set("projectId", project);
+  url.searchParams.set("teamId", TEAM_ID);
+  url.searchParams.set("to", end.toISOString());
+  url.searchParams.set("type", "device_type");
+  url.searchParams.set("tz", "America/Los_Angeles");
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${WEB_ANALYTICS_TOKEN}`
+    }
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const payload = await response.json();
+  return (payload.data || []).reduce((sum, item) => sum + Number(item.devices || 0), 0);
+}
+
 async function fetchAnalytics() {
   const { start, end } = monthRange();
   const query = `/v1/usage/analytics?from=${encodeURIComponent(start.toISOString())}&teamId=${TEAM_ID}&to=${encodeURIComponent(end.toISOString())}`;
   const { stdout } = await execFileAsync(
-    "npx",
-    ["vercel", "api", query, "--raw"],
+    vercelBin,
+    ["api", query, "--raw"],
     {
       cwd: __dirname,
-      env: {
-        ...process.env,
-        NPM_CONFIG_CACHE: "/tmp/codex-npm-cache-2"
-      },
+      env: process.env,
       maxBuffer: 5 * 1024 * 1024
     }
   );
 
   const data = JSON.parse(stdout);
+  const projects = normalizeRecords(data);
+  const userTotals = await Promise.all(
+    PROJECTS.map(async (project) => [project, await fetchMonthlyUsers(project, start, end)])
+  );
+  const userMap = new Map(userTotals);
+
   return {
     range: {
       start: start.toISOString(),
       end: end.toISOString()
     },
-    projects: normalizeRecords(data)
+    projects: projects.map((project) => ({
+      ...project,
+      monthlyUsers: userMap.get(project.project) ?? null
+    }))
   };
 }
 

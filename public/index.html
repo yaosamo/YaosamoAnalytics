@@ -8,37 +8,29 @@
   </head>
   <body>
     <main class="shell">
-      <section class="hero">
-        <p class="eyebrow">Vercel analytics pulse</p>
-        <h1>Monthly traffic across the projects that matter right now.</h1>
-        <p class="subcopy">
-          Current-month pageviews pulled live from the team analytics endpoint. Unique users are not
-          present in this payload, so the dashboard marks them as unavailable.
-        </p>
-        <div class="meta">
-          <div>
-            <span class="meta-label">Range</span>
-            <strong id="rangeLabel">Loading...</strong>
-          </div>
-          <div>
-            <span class="meta-label">Projects</span>
-            <strong>6 tracked</strong>
-          </div>
+      <section class="status-strip">
+        <div class="strip-cell strip-cell-wide">
+          <span class="meta-label">Sector</span>
+          <strong>Yaosamo analytics command board</strong>
         </div>
       </section>
 
       <section class="overview">
         <article class="overview-card">
-          <span class="meta-label">Total monthly visits</span>
+          <span class="meta-label">Sector visits</span>
           <strong id="totalVisits">-</strong>
         </article>
         <article class="overview-card">
-          <span class="meta-label">Best performer</span>
+          <span class="meta-label">Lead station</span>
           <strong id="topProject">-</strong>
         </article>
         <article class="overview-card">
-          <span class="meta-label">Users</span>
-          <strong>Unavailable in source</strong>
+          <span class="meta-label">Operator count</span>
+          <strong id="totalUsers">-</strong>
+        </article>
+        <article class="overview-card">
+          <span class="meta-label">Window</span>
+          <strong id="rangeLabel">Loading...</strong>
         </article>
       </section>
 
@@ -52,7 +44,7 @@
             <p class="card-title"></p>
             <p class="card-subtitle"></p>
           </div>
-          <span class="chip">Monthly</span>
+          <span class="chip">Station</span>
         </div>
 
         <div class="stats">
@@ -69,13 +61,24 @@
             <strong class="stat-value active-days"></strong>
           </div>
           <div>
-            <span class="meta-label">Latest day</span>
+            <span class="meta-label">Last day</span>
             <strong class="stat-value latest"></strong>
           </div>
         </div>
 
         <div class="sparkline-wrap">
+          <div class="axis-labels">
+            <span class="axis-top">0</span>
+            <span class="axis-mid">0</span>
+            <span class="axis-bottom">0</span>
+          </div>
           <svg class="sparkline" viewBox="0 0 240 72" preserveAspectRatio="none"></svg>
+        </div>
+
+        <div class="card-footer">
+          <span class="footer-chip footer-chip-cyan">01</span>
+          <span class="footer-chip footer-chip-green">ACT</span>
+          <span class="footer-chip footer-chip-amber">LIVE</span>
         </div>
       </article>
     </template>
