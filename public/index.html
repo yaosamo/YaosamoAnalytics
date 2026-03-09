@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Yaosamo Analytics</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">Vercel analytics pulse</p>
+        <h1>Monthly traffic across the projects that matter right now.</h1>
+        <p class="subcopy">
+          Current-month pageviews pulled live from the team analytics endpoint. Unique users are not
+          present in this payload, so the dashboard marks them as unavailable.
+        </p>
+        <div class="meta">
+          <div>
+            <span class="meta-label">Range</span>
+            <strong id="rangeLabel">Loading...</strong>
+          </div>
+          <div>
+            <span class="meta-label">Projects</span>
+            <strong>6 tracked</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="overview">
+        <article class="overview-card">
+          <span class="meta-label">Total monthly visits</span>
+          <strong id="totalVisits">-</strong>
+        </article>
+        <article class="overview-card">
+          <span class="meta-label">Best performer</span>
+          <strong id="topProject">-</strong>
+        </article>
+        <article class="overview-card">
+          <span class="meta-label">Users</span>
+          <strong>Unavailable in source</strong>
+        </article>
+      </section>
+
+      <section class="grid" id="projectGrid"></section>
+    </main>
+
+    <template id="projectCardTemplate">
+      <article class="card">
+        <div class="card-head">
+          <div>
+            <p class="card-title"></p>
+            <p class="card-subtitle"></p>
+          </div>
+          <span class="chip">Monthly</span>
+        </div>
+
+        <div class="stats">
+          <div>
+            <span class="meta-label">Visits</span>
+            <strong class="stat-value visits"></strong>
+          </div>
+          <div>
+            <span class="meta-label">Users</span>
+            <strong class="stat-value muted">N/A</strong>
+          </div>
+          <div>
+            <span class="meta-label">Active days</span>
+            <strong class="stat-value active-days"></strong>
+          </div>
+          <div>
+            <span class="meta-label">Latest day</span>
+            <strong class="stat-value latest"></strong>
+          </div>
+        </div>
+
+        <div class="sparkline-wrap">
+          <svg class="sparkline" viewBox="0 0 240 72" preserveAspectRatio="none"></svg>
+        </div>
+      </article>
+    </template>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+  </html>
