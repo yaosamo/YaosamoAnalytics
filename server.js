@@ -97,6 +97,18 @@ function parseRange(searchParams) {
   throw new Error("Unsupported preset. Use 7d, 30d, or custom.");
 }
 
+function eachDay(start, end) {
+  const days = [];
+  const cursor = new Date(start);
+
+  while (cursor <= end) {
+    days.push(cursor.toISOString().slice(0, 10));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+
+  return days;
+}
+
 function sendJson(response, statusCode, payload) {
   response.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
@@ -105,7 +117,8 @@ function sendJson(response, statusCode, payload) {
   response.end(JSON.stringify(payload));
 }
 
-function normalizeRecords(records) {
+function normalizeRecords(records, range) {
+  const dates = eachDay(range.start, range.end);
   const byProject = new Map(
     PROJECTS.map((project) => [
       project,
@@ -116,7 +129,7 @@ function normalizeRecords(records) {
         activeDays: 0,
         latestDate: null,
         latestVisits: 0,
-        series: []
+        seriesMap: new Map()
       }
     ])
   );
@@ -130,15 +143,15 @@ function normalizeRecords(records) {
     item.activeDays += 1;
     item.latestDate = record.timestamp;
     item.latestVisits = Number(record.pageviewCount || 0);
-    item.series.push({
-      date: record.timestamp.slice(0, 10),
-      visits: Number(record.pageviewCount || 0)
-    });
+    item.seriesMap.set(record.timestamp.slice(0, 10), Number(record.pageviewCount || 0));
   }
 
   return Array.from(byProject.values()).map((item) => ({
     ...item,
-    series: item.series.sort((a, b) => a.date.localeCompare(b.date))
+    series: dates.map((date) => ({
+      date,
+      visits: item.seriesMap.get(date) || 0
+    }))
   }));
 }
 
@@ -186,7 +199,7 @@ async function fetchAnalytics(range) {
   );
 
   const data = JSON.parse(stdout);
-  const projects = normalizeRecords(data);
+  const projects = normalizeRecords(data, range);
   const userTotals = await Promise.all(
     PROJECTS.map(async (project) => [project, await fetchMonthlyUsers(project, start, end)])
   );
