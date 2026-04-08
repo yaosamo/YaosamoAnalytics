@@ -8,30 +8,53 @@
   </head>
   <body>
     <main class="shell">
-      <section class="status-strip">
-        <div class="strip-cell strip-cell-wide">
-          <span class="meta-label">Sector</span>
-          <strong>Yaosamo analytics command board</strong>
+      <section class="hero">
+        <div class="hero-copy">
+          <span class="eyebrow">Yaosamo</span>
+          <h1>Toska analytics</h1>
+          <p class="hero-text">A clean view of traffic across your core projects, with Toska included in the board.</p>
         </div>
+        <form class="filters" id="rangeForm">
+          <div class="preset-group" role="group" aria-label="Date range presets">
+            <button type="button" class="preset-button" data-preset="7d">Last 7 days</button>
+            <button type="button" class="preset-button" data-preset="30d">Last 30 days</button>
+          </div>
+          <div class="date-group">
+            <label class="field">
+              <span>From</span>
+              <input id="startDate" name="start" type="date" />
+            </label>
+            <label class="field">
+              <span>To</span>
+              <input id="endDate" name="end" type="date" />
+            </label>
+            <button type="submit" class="apply-button">Apply</button>
+          </div>
+        </form>
       </section>
 
       <section class="overview">
         <article class="overview-card">
-          <span class="meta-label">Sector visits</span>
+          <span class="meta-label">Visits</span>
           <strong id="totalVisits">-</strong>
         </article>
         <article class="overview-card">
-          <span class="meta-label">Lead station</span>
+          <span class="meta-label">Top project</span>
           <strong id="topProject">-</strong>
         </article>
         <article class="overview-card">
-          <span class="meta-label">Operator count</span>
+          <span class="meta-label">Users</span>
           <strong id="totalUsers">-</strong>
         </article>
         <article class="overview-card">
-          <span class="meta-label">Window</span>
+          <span class="meta-label">Range</span>
           <strong id="rangeLabel">Loading...</strong>
         </article>
+      </section>
+
+      <section class="feedback-row">
+        <p class="status-text" id="statusText">Loading analytics…</p>
+        <p class="status-text status-text-error" id="errorText" hidden></p>
       </section>
 
       <section class="grid" id="projectGrid"></section>
@@ -44,7 +67,7 @@
             <p class="card-title"></p>
             <p class="card-subtitle"></p>
           </div>
-          <span class="chip">Station</span>
+          <span class="chip">Project</span>
         </div>
 
         <div class="stats">
@@ -73,12 +96,6 @@
             <span class="axis-bottom">0</span>
           </div>
           <svg class="sparkline" viewBox="0 0 240 72" preserveAspectRatio="none"></svg>
-        </div>
-
-        <div class="card-footer">
-          <span class="footer-chip footer-chip-cyan">01</span>
-          <span class="footer-chip footer-chip-green">ACT</span>
-          <span class="footer-chip footer-chip-amber">LIVE</span>
         </div>
       </article>
     </template>

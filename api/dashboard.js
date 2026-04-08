@@ -8,14 +8,72 @@ const PROJECTS = [
   "games",
   "when-there",
   "qrcodemachine",
-  "yaosamo-ip"
+  "yaosamo-ip",
+  "toska"
 ];
 
-function monthRange() {
+function utcStartOfDay(date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0));
+}
+
+function utcEndOfDay(date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999));
+}
+
+function lastDaysRange(days) {
   const now = new Date();
-  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
-  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 59, 999));
+  const end = utcEndOfDay(now);
+  const start = new Date(end);
+  start.setUTCDate(start.getUTCDate() - (days - 1));
+  start.setUTCHours(0, 0, 0, 0);
   return { start, end };
+}
+
+function parseDateInput(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value || "")) {
+    return null;
+  }
+
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function parseRange(searchParams) {
+  const preset = searchParams.get("preset");
+  if (preset === "7d") {
+    return { ...lastDaysRange(7), preset: "7d" };
+  }
+
+  if (preset === "30d" || !preset) {
+    return { ...lastDaysRange(30), preset: "30d" };
+  }
+
+  if (preset === "custom") {
+    const startInput = searchParams.get("start");
+    const endInput = searchParams.get("end");
+    const startDate = parseDateInput(startInput);
+    const endDate = parseDateInput(endInput);
+
+    if (!startDate || !endDate) {
+      throw new Error("Custom range requires valid start and end dates.");
+    }
+
+    const start = utcStartOfDay(startDate);
+    const end = utcEndOfDay(endDate);
+
+    if (start > end) {
+      throw new Error("Custom range start date must be on or before end date.");
+    }
+
+    const days = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
+    if (days > 366) {
+      throw new Error("Custom range cannot exceed 366 days.");
+    }
+
+    return { start, end, preset: "custom" };
+  }
+
+  throw new Error("Unsupported preset. Use 7d, 30d, or custom.");
 }
 
 function normalizeRecords(records) {
@@ -95,8 +153,8 @@ async function fetchMonthlyUsers(project, start, end, token) {
   }
 }
 
-async function fetchAnalytics(token) {
-  const { start, end } = monthRange();
+async function fetchAnalytics(token, range) {
+  const { start, end, preset } = range;
   const usageUrl = new URL("https://api.vercel.com/v1/usage/analytics");
   usageUrl.searchParams.set("from", start.toISOString());
   usageUrl.searchParams.set("teamId", TEAM_ID);
@@ -111,6 +169,7 @@ async function fetchAnalytics(token) {
 
   return {
     range: {
+      preset,
       start: start.toISOString(),
       end: end.toISOString()
     },
@@ -133,7 +192,8 @@ export default async function handler(request, response) {
   }
 
   try {
-    const payload = await fetchAnalytics(token);
+    const requestUrl = new URL(request.url, "https://yaosamo-analytics.local");
+    const payload = await fetchAnalytics(token, parseRange(requestUrl.searchParams));
     response.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=300");
     response.status(200).json(payload);
   } catch (error) {

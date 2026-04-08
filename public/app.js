@@ -1,9 +1,36 @@
 const currencyless = new Intl.NumberFormat("en-US");
+const DEFAULT_PRESET = "30d";
 
 function formatDateRange(start, end) {
   const startDate = new Date(start);
   const endDate = new Date(end);
   return `${startDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })} to ${endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+}
+
+function formatDateInput(value) {
+  return value.slice(0, 10);
+}
+
+function setPresetState(activePreset) {
+  document.querySelectorAll(".preset-button").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.preset === activePreset);
+  });
+}
+
+function setStatus(message, isError = false) {
+  const statusText = document.getElementById("statusText");
+  const errorText = document.getElementById("errorText");
+
+  if (isError) {
+    statusText.textContent = "";
+    errorText.hidden = false;
+    errorText.textContent = message;
+    return;
+  }
+
+  errorText.hidden = true;
+  errorText.textContent = "";
+  statusText.textContent = message;
 }
 
 function sparklinePath(series) {
@@ -33,7 +60,7 @@ function renderCard(project) {
   fragment.querySelector(".card-title").textContent = project.project;
   fragment.querySelector(".card-subtitle").textContent = project.latestDate
     ? `Signal updated ${project.latestDate.slice(0, 10)}`
-    : "No signal this month";
+    : "No signal in this range";
   fragment.querySelector(".visits").textContent = currencyless.format(project.monthlyVisits);
   fragment.querySelector(".muted").textContent =
     project.monthlyUsers == null ? "N/A" : currencyless.format(project.monthlyUsers);
@@ -60,8 +87,11 @@ function renderCard(project) {
   return fragment;
 }
 
-async function loadDashboard() {
-  const response = await fetch("/api/dashboard");
+async function loadDashboard(params = new URLSearchParams({ preset: DEFAULT_PRESET })) {
+  setStatus("Loading analytics…");
+  document.body.dataset.loading = "true";
+
+  const response = await fetch(`/api/dashboard?${params.toString()}`);
   const payload = await response.json();
 
   if (!response.ok) {
@@ -73,12 +103,17 @@ async function loadDashboard() {
   const totalUsers = document.getElementById("totalUsers");
   const topProject = document.getElementById("topProject");
   const projectGrid = document.getElementById("projectGrid");
+  const startDate = document.getElementById("startDate");
+  const endDate = document.getElementById("endDate");
 
   const sortedProjects = [...payload.projects].sort((a, b) => b.monthlyVisits - a.monthlyVisits);
   const total = sortedProjects.reduce((sum, project) => sum + project.monthlyVisits, 0);
   const userTotal = sortedProjects.reduce((sum, project) => sum + (project.monthlyUsers || 0), 0);
   const hasUsers = sortedProjects.some((project) => project.monthlyUsers != null);
 
+  startDate.value = formatDateInput(payload.range.start);
+  endDate.value = formatDateInput(payload.range.end);
+  setPresetState(payload.range.preset);
   rangeLabel.textContent = formatDateRange(payload.range.start, payload.range.end);
   totalVisits.textContent = currencyless.format(total);
   totalUsers.textContent = hasUsers ? currencyless.format(userTotal) : "N/A";
@@ -90,8 +125,47 @@ async function loadDashboard() {
   sortedProjects.forEach((project) => {
     projectGrid.appendChild(renderCard(project));
   });
+
+  setStatus(`${sortedProjects.length} projects loaded`);
+  document.body.dataset.loading = "false";
 }
 
+function buildCustomParams() {
+  const start = document.getElementById("startDate").value;
+  const end = document.getElementById("endDate").value;
+  return new URLSearchParams({
+    preset: "custom",
+    start,
+    end
+  });
+}
+
+document.querySelectorAll(".preset-button").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const params = new URLSearchParams({ preset: button.dataset.preset || DEFAULT_PRESET });
+
+    try {
+      await loadDashboard(params);
+    } catch (error) {
+      document.body.dataset.loading = "false";
+      setStatus(error.message, true);
+    }
+  });
+});
+
+document.getElementById("rangeForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  try {
+    await loadDashboard(buildCustomParams());
+  } catch (error) {
+    document.body.dataset.loading = "false";
+    setStatus(error.message, true);
+  }
+});
+
 loadDashboard().catch((error) => {
-  document.getElementById("projectGrid").innerHTML = `<article class="card"><p>${error.message}</p></article>`;
+  document.body.dataset.loading = "false";
+  document.getElementById("projectGrid").innerHTML = `<article class="card card-empty"><p>${error.message}</p></article>`;
+  setStatus(error.message, true);
 });

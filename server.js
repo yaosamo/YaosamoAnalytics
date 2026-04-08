@@ -20,7 +20,8 @@ const PROJECTS = [
   "games",
   "when-there",
   "qrcodemachine",
-  "yaosamo-ip"
+  "yaosamo-ip",
+  "toska"
 ];
 const WEB_ANALYTICS_TOKEN = process.env.VERCEL_BEARER_TOKEN || "";
 
@@ -32,11 +33,68 @@ const MIME_TYPES = {
   ".svg": "image/svg+xml; charset=utf-8"
 };
 
-function monthRange() {
+function utcStartOfDay(date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0));
+}
+
+function utcEndOfDay(date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999));
+}
+
+function lastDaysRange(days) {
   const now = new Date();
-  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
-  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 59, 999));
+  const end = utcEndOfDay(now);
+  const start = new Date(end);
+  start.setUTCDate(start.getUTCDate() - (days - 1));
+  start.setUTCHours(0, 0, 0, 0);
   return { start, end };
+}
+
+function parseDateInput(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value || "")) {
+    return null;
+  }
+
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function parseRange(searchParams) {
+  const preset = searchParams.get("preset");
+  if (preset === "7d") {
+    return { ...lastDaysRange(7), preset: "7d" };
+  }
+
+  if (preset === "30d" || !preset) {
+    return { ...lastDaysRange(30), preset: "30d" };
+  }
+
+  if (preset === "custom") {
+    const startInput = searchParams.get("start");
+    const endInput = searchParams.get("end");
+    const startDate = parseDateInput(startInput);
+    const endDate = parseDateInput(endInput);
+
+    if (!startDate || !endDate) {
+      throw new Error("Custom range requires valid start and end dates.");
+    }
+
+    const start = utcStartOfDay(startDate);
+    const end = utcEndOfDay(endDate);
+
+    if (start > end) {
+      throw new Error("Custom range start date must be on or before end date.");
+    }
+
+    const days = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
+    if (days > 366) {
+      throw new Error("Custom range cannot exceed 366 days.");
+    }
+
+    return { start, end, preset: "custom" };
+  }
+
+  throw new Error("Unsupported preset. Use 7d, 30d, or custom.");
 }
 
 function sendJson(response, statusCode, payload) {
@@ -114,8 +172,8 @@ async function fetchMonthlyUsers(project, start, end) {
   return (payload.data || []).reduce((sum, item) => sum + Number(item.devices || 0), 0);
 }
 
-async function fetchAnalytics() {
-  const { start, end } = monthRange();
+async function fetchAnalytics(range) {
+  const { start, end, preset } = range;
   const query = `/v1/usage/analytics?from=${encodeURIComponent(start.toISOString())}&teamId=${TEAM_ID}&to=${encodeURIComponent(end.toISOString())}`;
   const { stdout } = await execFileAsync(
     vercelBin,
@@ -136,6 +194,7 @@ async function fetchAnalytics() {
 
   return {
     range: {
+      preset,
       start: start.toISOString(),
       end: end.toISOString()
     },
@@ -161,7 +220,7 @@ const server = createServer(async (request, response) => {
     const url = new URL(request.url, `http://${request.headers.host}`);
 
     if (url.pathname === "/api/dashboard") {
-      const payload = await fetchAnalytics();
+      const payload = await fetchAnalytics(parseRange(url.searchParams));
       sendJson(response, 200, payload);
       return;
     }
