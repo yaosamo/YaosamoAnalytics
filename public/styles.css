@@ -47,7 +47,7 @@ body {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
   gap: 24px;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .eyebrow,
@@ -86,7 +86,7 @@ body {
 
 .filters {
   display: grid;
-  gap: 14px;
+  gap: 10px;
   justify-items: end;
 }
 
@@ -140,11 +140,12 @@ body {
 .date-group {
   grid-template-columns: repeat(3, auto);
   gap: 12px;
+  align-items: end;
 }
 
 .field {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .field input {
@@ -153,12 +154,6 @@ body {
   box-shadow: var(--shadow);
 }
 
-.overview {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin-bottom: 12px;
-}
-
-.overview-card,
 .card,
 .stats > div,
 .sparkline-wrap {
@@ -169,24 +164,14 @@ body {
   box-shadow: var(--shadow);
 }
 
-.overview-card {
-  min-height: 120px;
-  padding: 20px;
-}
-
-.overview-card strong {
-  display: block;
-  margin-top: 14px;
-  font-size: clamp(1.35rem, 2.2vw, 1.85rem);
-  letter-spacing: -0.04em;
-}
-
 .feedback-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
   min-height: 24px;
-  margin: 0 2px 20px;
+  margin: 0 2px 16px;
 }
 
 .status-text {
@@ -199,17 +184,18 @@ body {
 }
 
 .grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: stretch;
+  gap: 14px;
 }
 
 .card {
   height: 100%;
   display: grid;
   grid-template-rows: auto auto 1fr;
-  gap: 16px;
+  gap: 12px;
   align-content: start;
-  padding: 20px;
+  padding: 16px;
 }
 
 .card-empty {
@@ -218,28 +204,20 @@ body {
 
 .card-head {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr;
   align-items: start;
-  gap: 12px;
+  gap: 8px;
 }
 
 .card-title {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: 1rem;
   line-height: 1.1;
   letter-spacing: -0.03em;
 }
 
 .card-subtitle {
-  margin: 8px 0 0;
-}
-
-.chip {
-  padding: 8px 10px;
-  background: var(--accent-soft);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  font-weight: 600;
+  margin: 0;
 }
 
 .axis-labels {
@@ -261,29 +239,32 @@ body {
 
 .stats {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .stats > div {
-  min-height: 88px;
-  padding: 16px;
+  min-height: 74px;
+  padding: 12px;
+  border-radius: 16px;
 }
 
 .stat-value {
   display: block;
-  margin-top: 10px;
-  font-size: 1.4rem;
+  margin-top: 6px;
+  font-size: 1.2rem;
   letter-spacing: -0.04em;
 }
 
 .sparkline-wrap {
   position: relative;
-  min-height: 126px;
-  padding: 14px 14px 14px 48px;
+  min-height: 104px;
+  padding: 12px 12px 12px 44px;
   background:
     linear-gradient(rgba(24, 24, 27, 0.04) 1px, transparent 1px),
     linear-gradient(90deg, rgba(24, 24, 27, 0.04) 1px, transparent 1px),
     linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(250, 250, 250, 0.92));
-  background-size: 100% 22px, 22px 100%, auto;
+  background-size: 100% 20px, 20px 100%, auto;
+  border-radius: 18px;
 }
 
 .sparkline {
@@ -311,7 +292,6 @@ body[data-loading="true"] .preset-button {
 
 @media (max-width: 1080px) {
   .hero,
-  .overview,
   .grid {
     grid-template-columns: 1fr;
   }
@@ -342,6 +322,10 @@ body[data-loading="true"] .preset-button {
 
   .stats {
     grid-template-columns: 1fr;
+  }
+
+  .apply-button {
+    width: 100%;
   }
 }
 

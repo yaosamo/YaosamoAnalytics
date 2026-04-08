@@ -11,8 +11,8 @@
       <section class="hero">
         <div class="hero-copy">
           <span class="eyebrow">Yaosamo</span>
-          <h1>Toska analytics</h1>
-          <p class="hero-text">A clean view of traffic across your core projects, with Toska included in the board.</p>
+          <h1>Analytics</h1>
+          <p class="hero-text">A compact view of traffic across your core projects.</p>
         </div>
         <form class="filters" id="rangeForm">
           <div class="preset-group" role="group" aria-label="Date range presets">
@@ -33,27 +33,9 @@
         </form>
       </section>
 
-      <section class="overview">
-        <article class="overview-card">
-          <span class="meta-label">Visits</span>
-          <strong id="totalVisits">-</strong>
-        </article>
-        <article class="overview-card">
-          <span class="meta-label">Top project</span>
-          <strong id="topProject">-</strong>
-        </article>
-        <article class="overview-card">
-          <span class="meta-label">Users</span>
-          <strong id="totalUsers">-</strong>
-        </article>
-        <article class="overview-card">
-          <span class="meta-label">Range</span>
-          <strong id="rangeLabel">Loading...</strong>
-        </article>
-      </section>
-
       <section class="feedback-row">
         <p class="status-text" id="statusText">Loading analytics…</p>
+        <p class="status-text" id="rangeLabel">Loading...</p>
         <p class="status-text status-text-error" id="errorText" hidden></p>
       </section>
 
@@ -67,7 +49,6 @@
             <p class="card-title"></p>
             <p class="card-subtitle"></p>
           </div>
-          <span class="chip">Project</span>
         </div>
 
         <div class="stats">
@@ -78,14 +59,6 @@
           <div>
             <span class="meta-label">Users</span>
             <strong class="stat-value muted">N/A</strong>
-          </div>
-          <div>
-            <span class="meta-label">Active days</span>
-            <strong class="stat-value active-days"></strong>
-          </div>
-          <div>
-            <span class="meta-label">Last day</span>
-            <strong class="stat-value latest"></strong>
           </div>
         </div>
 

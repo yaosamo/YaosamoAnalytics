@@ -64,8 +64,6 @@ function renderCard(project) {
   fragment.querySelector(".visits").textContent = currencyless.format(project.monthlyVisits);
   fragment.querySelector(".muted").textContent =
     project.monthlyUsers == null ? "N/A" : currencyless.format(project.monthlyUsers);
-  fragment.querySelector(".active-days").textContent = currencyless.format(project.activeDays);
-  fragment.querySelector(".latest").textContent = currencyless.format(project.latestVisits);
 
   const svg = fragment.querySelector(".sparkline");
   const yTop = fragment.querySelector(".axis-top");
@@ -99,27 +97,16 @@ async function loadDashboard(params = new URLSearchParams({ preset: DEFAULT_PRES
   }
 
   const rangeLabel = document.getElementById("rangeLabel");
-  const totalVisits = document.getElementById("totalVisits");
-  const totalUsers = document.getElementById("totalUsers");
-  const topProject = document.getElementById("topProject");
   const projectGrid = document.getElementById("projectGrid");
   const startDate = document.getElementById("startDate");
   const endDate = document.getElementById("endDate");
 
   const sortedProjects = [...payload.projects].sort((a, b) => b.monthlyVisits - a.monthlyVisits);
-  const total = sortedProjects.reduce((sum, project) => sum + project.monthlyVisits, 0);
-  const userTotal = sortedProjects.reduce((sum, project) => sum + (project.monthlyUsers || 0), 0);
-  const hasUsers = sortedProjects.some((project) => project.monthlyUsers != null);
 
   startDate.value = formatDateInput(payload.range.start);
   endDate.value = formatDateInput(payload.range.end);
   setPresetState(payload.range.preset);
   rangeLabel.textContent = formatDateRange(payload.range.start, payload.range.end);
-  totalVisits.textContent = currencyless.format(total);
-  totalUsers.textContent = hasUsers ? currencyless.format(userTotal) : "N/A";
-  topProject.textContent = sortedProjects[0]
-    ? `${sortedProjects[0].project} / ${currencyless.format(sortedProjects[0].monthlyVisits)}`
-    : "No traffic";
 
   projectGrid.innerHTML = "";
   sortedProjects.forEach((project) => {
