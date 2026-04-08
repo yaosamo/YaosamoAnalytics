@@ -58,9 +58,6 @@ function renderCard(project) {
   const template = document.getElementById("projectCardTemplate");
   const fragment = template.content.cloneNode(true);
   fragment.querySelector(".card-title").textContent = project.project;
-  fragment.querySelector(".card-subtitle").textContent = project.latestDate
-    ? `Signal updated ${project.latestDate.slice(0, 10)}`
-    : "No signal in this range";
   fragment.querySelector(".visits").textContent = currencyless.format(project.monthlyVisits);
   fragment.querySelector(".muted").textContent =
     project.monthlyUsers == null ? "N/A" : currencyless.format(project.monthlyUsers);
