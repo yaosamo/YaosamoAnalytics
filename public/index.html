@@ -15,6 +15,24 @@
           <p class="hero-text">A compact view of traffic across your core projects.</p>
         </div>
         <form class="filters" id="rangeForm">
+          <div class="project-filter">
+            <label class="field field-wide">
+              <span>Projects</span>
+              <div class="combobox" id="projectCombobox">
+                <button type="button" class="combobox-trigger" id="projectTrigger" aria-expanded="false">
+                  All projects
+                </button>
+                <div class="combobox-panel" id="projectPanel" hidden>
+                  <input id="projectSearch" class="combobox-search" type="text" placeholder="Search projects" />
+                  <div class="combobox-actions">
+                    <button type="button" class="combobox-action" id="selectAllProjects">All</button>
+                    <button type="button" class="combobox-action" id="clearProjects">None</button>
+                  </div>
+                  <div class="combobox-options" id="projectOptions"></div>
+                </div>
+              </div>
+            </label>
+          </div>
           <div class="preset-group" role="group" aria-label="Date range presets">
             <button type="button" class="preset-button" data-preset="7d">Last 7 days</button>
             <button type="button" class="preset-button" data-preset="30d">Last 30 days</button>

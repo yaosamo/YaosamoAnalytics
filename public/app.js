@@ -1,5 +1,11 @@
 const currencyless = new Intl.NumberFormat("en-US");
 const DEFAULT_PRESET = "30d";
+const state = {
+  availableProjects: [],
+  filteredProjects: [],
+  selectedProjects: new Set(),
+  searchTerm: ""
+};
 
 function formatDateRange(start, end) {
   const startDate = new Date(start);
@@ -31,6 +37,93 @@ function setStatus(message, isError = false) {
   errorText.hidden = true;
   errorText.textContent = "";
   statusText.textContent = message;
+}
+
+function getVisibleProjects() {
+  return state.filteredProjects.filter((project) => state.selectedProjects.has(project.project));
+}
+
+function updateProjectTrigger() {
+  const trigger = document.getElementById("projectTrigger");
+  const count = state.selectedProjects.size;
+
+  if (!count || count === state.availableProjects.length) {
+    trigger.textContent = "All projects";
+    return;
+  }
+
+  if (count === 1) {
+    trigger.textContent = Array.from(state.selectedProjects)[0];
+    return;
+  }
+
+  trigger.textContent = `${count} projects`;
+}
+
+function renderProjectGrid() {
+  const projectGrid = document.getElementById("projectGrid");
+  const visibleProjects = getVisibleProjects().sort((a, b) => b.monthlyVisits - a.monthlyVisits);
+
+  projectGrid.innerHTML = "";
+  visibleProjects.forEach((project) => {
+    projectGrid.appendChild(renderCard(project));
+  });
+
+  setStatus(`${visibleProjects.length} projects loaded`);
+}
+
+function renderProjectOptions() {
+  const options = document.getElementById("projectOptions");
+  const term = state.searchTerm.trim().toLowerCase();
+  const names = state.availableProjects.filter((name) => name.toLowerCase().includes(term));
+
+  options.innerHTML = "";
+
+  names.forEach((name) => {
+    const label = document.createElement("label");
+    label.className = "combobox-option";
+
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = state.selectedProjects.has(name);
+    input.addEventListener("change", () => {
+      if (input.checked) {
+        state.selectedProjects.add(name);
+      } else {
+        state.selectedProjects.delete(name);
+      }
+
+      updateProjectTrigger();
+      renderProjectOptions();
+      renderProjectGrid();
+    });
+
+    const text = document.createElement("span");
+    text.textContent = name;
+    label.append(input, text);
+    options.appendChild(label);
+  });
+}
+
+function syncProjects(projects, availableProjects) {
+  state.filteredProjects = projects;
+  state.availableProjects = availableProjects;
+
+  if (!state.selectedProjects.size) {
+    state.selectedProjects = new Set(availableProjects);
+  } else {
+    state.selectedProjects = new Set(
+      Array.from(state.selectedProjects).filter((name) => availableProjects.includes(name))
+    );
+
+    if (!state.selectedProjects.size) {
+      state.selectedProjects = new Set(availableProjects);
+    }
+  }
+
+  updateProjectTrigger();
+  renderProjectOptions();
+  renderProjectGrid();
 }
 
 function sparklinePath(series) {
@@ -94,23 +187,14 @@ async function loadDashboard(params = new URLSearchParams({ preset: DEFAULT_PRES
   }
 
   const rangeLabel = document.getElementById("rangeLabel");
-  const projectGrid = document.getElementById("projectGrid");
   const startDate = document.getElementById("startDate");
   const endDate = document.getElementById("endDate");
-
-  const sortedProjects = [...payload.projects].sort((a, b) => b.monthlyVisits - a.monthlyVisits);
 
   startDate.value = formatDateInput(payload.range.start);
   endDate.value = formatDateInput(payload.range.end);
   setPresetState(payload.range.preset);
   rangeLabel.textContent = formatDateRange(payload.range.start, payload.range.end);
-
-  projectGrid.innerHTML = "";
-  sortedProjects.forEach((project) => {
-    projectGrid.appendChild(renderCard(project));
-  });
-
-  setStatus(`${sortedProjects.length} projects loaded`);
+  syncProjects(payload.projects, payload.availableProjects || payload.projects.map((project) => project.project));
   document.body.dataset.loading = "false";
 }
 
@@ -145,6 +229,45 @@ document.getElementById("rangeForm").addEventListener("submit", async (event) =>
   } catch (error) {
     document.body.dataset.loading = "false";
     setStatus(error.message, true);
+  }
+});
+
+document.getElementById("projectTrigger").addEventListener("click", () => {
+  const panel = document.getElementById("projectPanel");
+  const trigger = document.getElementById("projectTrigger");
+  const nextOpen = panel.hidden;
+  panel.hidden = !nextOpen;
+  trigger.setAttribute("aria-expanded", String(nextOpen));
+
+  if (nextOpen) {
+    document.getElementById("projectSearch").focus();
+  }
+});
+
+document.getElementById("projectSearch").addEventListener("input", (event) => {
+  state.searchTerm = event.target.value;
+  renderProjectOptions();
+});
+
+document.getElementById("selectAllProjects").addEventListener("click", () => {
+  state.selectedProjects = new Set(state.availableProjects);
+  updateProjectTrigger();
+  renderProjectOptions();
+  renderProjectGrid();
+});
+
+document.getElementById("clearProjects").addEventListener("click", () => {
+  state.selectedProjects = new Set();
+  updateProjectTrigger();
+  renderProjectOptions();
+  renderProjectGrid();
+});
+
+document.addEventListener("click", (event) => {
+  const combobox = document.getElementById("projectCombobox");
+  if (!combobox.contains(event.target)) {
+    document.getElementById("projectPanel").hidden = true;
+    document.getElementById("projectTrigger").setAttribute("aria-expanded", "false");
   }
 });
 

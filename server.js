@@ -11,18 +11,6 @@ const publicDir = join(__dirname, "public");
 const vercelBin = join(__dirname, "node_modules", ".bin", "vercel");
 const PORT = Number(process.env.PORT || 4318);
 const TEAM_ID = "team_PdY9NxADrySafNPPBKV1CyhW";
-const PROJECTS = [
-  "gong",
-  "selfie-app",
-  "personal-website",
-  "creativeclub",
-  "visuals",
-  "games",
-  "when-there",
-  "qrcodemachine",
-  "yaosamo-ip",
-  "toska"
-];
 const WEB_ANALYTICS_TOKEN = process.env.VERCEL_BEARER_TOKEN || "";
 
 const MIME_TYPES = {
@@ -117,13 +105,50 @@ function sendJson(response, statusCode, payload) {
   response.end(JSON.stringify(payload));
 }
 
-function normalizeRecords(records, range) {
+async function fetchJson(url, token) {
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`Request failed (${response.status}): ${text.slice(0, 120)}`);
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`Invalid JSON response: ${text.slice(0, 120)}`);
+  }
+}
+
+async function fetchProjects() {
+  const url = new URL("https://api.vercel.com/v10/projects");
+  url.searchParams.set("teamId", TEAM_ID);
+  url.searchParams.set("limit", "100");
+
+  const payload = await fetchJson(url, WEB_ANALYTICS_TOKEN);
+  const projects = Array.isArray(payload) ? payload : payload.projects || [];
+
+  return projects
+    .map((project) => ({
+      id: project.id,
+      name: project.name
+    }))
+    .filter((project) => project.id && project.name)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function normalizeRecords(records, availableProjects, range) {
   const dates = eachDay(range.start, range.end);
   const byProject = new Map(
-    PROJECTS.map((project) => [
-      project,
+    availableProjects.map((project) => [
+      project.name,
       {
-        project,
+        project: project.name,
+        projectId: project.id,
         monthlyVisits: 0,
         monthlyUsers: null,
         activeDays: 0,
@@ -165,7 +190,7 @@ async function fetchMonthlyUsers(project, start, end) {
   url.searchParams.set("filter", "{}");
   url.searchParams.set("from", start.toISOString());
   url.searchParams.set("limit", "250");
-  url.searchParams.set("projectId", project);
+  url.searchParams.set("projectId", project.id);
   url.searchParams.set("teamId", TEAM_ID);
   url.searchParams.set("to", end.toISOString());
   url.searchParams.set("type", "device_type");
@@ -187,6 +212,7 @@ async function fetchMonthlyUsers(project, start, end) {
 
 async function fetchAnalytics(range) {
   const { start, end, preset } = range;
+  const availableProjects = await fetchProjects();
   const query = `/v1/usage/analytics?from=${encodeURIComponent(start.toISOString())}&teamId=${TEAM_ID}&to=${encodeURIComponent(end.toISOString())}`;
   const { stdout } = await execFileAsync(
     vercelBin,
@@ -199,13 +225,14 @@ async function fetchAnalytics(range) {
   );
 
   const data = JSON.parse(stdout);
-  const projects = normalizeRecords(data, range);
+  const projects = normalizeRecords(data, availableProjects, range);
   const userTotals = await Promise.all(
-    PROJECTS.map(async (project) => [project, await fetchMonthlyUsers(project, start, end)])
+    availableProjects.map(async (project) => [project.name, await fetchMonthlyUsers(project, start, end)])
   );
   const userMap = new Map(userTotals);
 
   return {
+    availableProjects: availableProjects.map((project) => project.name),
     range: {
       preset,
       start: start.toISOString(),
